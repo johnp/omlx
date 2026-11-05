@@ -64,6 +64,32 @@ class TestCLIModule:
         assert default.stdout.strip() == expected
         assert explicit.stdout.strip() == "0"
 
+    def test_package_import_renews_metal_residency(self):
+        """Importing omlx enables MLX's residency renewal and keeps an explicit value."""
+        code = (
+            "import os, omlx; "
+            "print(os.environ.get('MLX_METAL_RESIDENCY_REFRESH_INTERVAL_MS'))"
+        )
+        name = "MLX_METAL_RESIDENCY_REFRESH_INTERVAL_MS"
+        env = {k: v for k, v in os.environ.items() if k != name}
+        default = subprocess.run(
+            [sys.executable, "-c", code],
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        explicit = subprocess.run(
+            [sys.executable, "-c", code],
+            env={**env, name: "0"},
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        expected = "500" if sys.platform == "darwin" else "None"
+        assert default.stdout.strip() == expected
+        assert explicit.stdout.strip() == "0"
+
 
 class TestCLIHelp:
     """Tests for CLI help functionality."""

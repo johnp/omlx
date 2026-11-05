@@ -89,6 +89,7 @@ def test_deployment_round_trip_and_worker_plan_are_json_only():
 def test_hostfile_envs_carry_stability_defaults(monkeypatch):
     for name in (
         "MLX_METAL_FAST_SYNCH",
+        "MLX_METAL_RESIDENCY_REFRESH_INTERVAL_MS",
         "MLX_MAX_OPS_PER_BUFFER",
         "MLX_MAX_MB_PER_BUFFER",
         "JACCL_PROGRESS_TIMEOUT_MS",
@@ -103,6 +104,7 @@ def test_hostfile_envs_carry_stability_defaults(monkeypatch):
     # driver's ~10 s timeout, which answers with SIGABRT and orphaned wired
     # memory. JACCL knobs pin the wheel's ProgressGuard/teardown-exit posture.
     assert "MLX_METAL_FAST_SYNCH=0" in envs
+    assert "MLX_METAL_RESIDENCY_REFRESH_INTERVAL_MS=500" in envs
     assert "MLX_MAX_OPS_PER_BUFFER=16" in envs
     assert "MLX_MAX_MB_PER_BUFFER=512" in envs
     assert "JACCL_PROGRESS_TIMEOUT_MS=30000" in envs
@@ -111,6 +113,7 @@ def test_hostfile_envs_carry_stability_defaults(monkeypatch):
 
 def test_hostfile_envs_respect_operator_overrides(monkeypatch):
     monkeypatch.setenv("MLX_METAL_FAST_SYNCH", "1")
+    monkeypatch.setenv("MLX_METAL_RESIDENCY_REFRESH_INTERVAL_MS", "0")
     monkeypatch.setenv("MLX_MAX_OPS_PER_BUFFER", "32")
     monkeypatch.setenv("JACCL_PROGRESS_TIMEOUT_MS", "60000")
     deployment = _deployment()
@@ -119,6 +122,9 @@ def test_hostfile_envs_respect_operator_overrides(monkeypatch):
 
     assert "MLX_METAL_FAST_SYNCH=1" in envs
     assert "MLX_METAL_FAST_SYNCH=0" not in envs
+    # "0" is a meaningful value: it disables the residency renewal.
+    assert "MLX_METAL_RESIDENCY_REFRESH_INTERVAL_MS=0" in envs
+    assert "MLX_METAL_RESIDENCY_REFRESH_INTERVAL_MS=500" not in envs
     assert "MLX_MAX_OPS_PER_BUFFER=32" in envs
     assert "MLX_MAX_OPS_PER_BUFFER=16" not in envs
     assert "JACCL_PROGRESS_TIMEOUT_MS=60000" in envs

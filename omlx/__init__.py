@@ -21,6 +21,13 @@ from omlx._version import __version__
 # and relaxes the compute preemption timeout behind ImpactingInteractivity kills.
 if sys.platform == "darwin":
     os.environ.setdefault("AGX_RELAX_CDM_CTXSTORE_TIMEOUT", "1")
+    # macOS drops the residency of wired Metal allocations after roughly 1-2 s
+    # of GPU idle. The first command buffer after a pause then re-wires them at
+    # roughly 7-8 ms/GB, which is seconds for a large model. MLX 0.32.4 renews
+    # each residency set on this interval without submitting GPU work. MLX reads
+    # the variable when it creates its Metal device; a value already set in the
+    # environment (including "0", which disables renewal) is kept.
+    os.environ.setdefault("MLX_METAL_RESIDENCY_REFRESH_INTERVAL_MS", "500")
 
 _LAZY = {
     "Request": "omlx.request",

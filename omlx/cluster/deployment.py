@@ -66,8 +66,14 @@ _MAX_PLAN_BYTES = 256 * 1024
 # 30 s unwinds and exits instead of spinning forever with memory wired. The
 # wheel ships compiled defaults; pinning them here keeps the posture explicit
 # and identical across every rank.
+#
+# MLX_METAL_RESIDENCY_REFRESH_INTERVAL_MS renews wired Metal residency on a
+# timer. macOS drops it after roughly 1-2 s of GPU idle, so the first command
+# buffer after a pause re-wires the model's weights at roughly 7-8 ms/GB. The
+# MLX 0.32.4 renewal thread submits no GPU work. "0" disables the renewal.
 _RANK_ENV_DEFAULTS = (
     ("MLX_METAL_FAST_SYNCH", "0"),
+    ("MLX_METAL_RESIDENCY_REFRESH_INTERVAL_MS", "500"),
     ("MLX_MAX_OPS_PER_BUFFER", "16"),
     ("MLX_MAX_MB_PER_BUFFER", "512"),
     ("JACCL_PROGRESS_TIMEOUT_MS", "30000"),
